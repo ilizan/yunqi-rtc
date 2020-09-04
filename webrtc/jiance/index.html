@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>测试</title>
+    <script src="DetectRtC.js"></script>
+</head>
+
+<body>
+
+</body>
+
+</html>
+<script>
+    DetectRTC.load(function () {
+        console.log(DetectRTC.version)
+        console.log(DetectRTC.hasWebcam)
+        console.log(DetectRTC.hasMicrophone)
+        DetectRTC.hasSpeakers
+        DetectRTC.isScreenCapturingSupported
+        DetectRTC.isSctpDataChannelsSupported
+        DetectRTC.isRtpDataChannelsSupported
+        DetectRTC.isAudioContextSupported
+        DetectRTC.isWebRTCSupported
+        DetectRTC.isDesktopCapturingSupported
+        DetectRTC.isMobileDevice
+
+        DetectRTC.isWebSocketsSupported
+        DetectRTC.isWebSocketsBlocked
+
+        DetectRTC.isWebsiteHasWebcamPermissions        // getUserMedia allowed for HTTPs domain in Chrome?
+        DetectRTC.isWebsiteHasMicrophonePermissions    // getUserMedia allowed for HTTPs domain in Chrome?
+
+        DetectRTC.audioInputDevices    // microphones
+        DetectRTC.audioOutputDevices   // speakers
+        DetectRTC.videoInputDevices    // cameras
+
+        DetectRTC.osName
+        DetectRTC.osVersion
+
+        DetectRTC.browser.name === 'Edge' || 'Chrome' || 'Firefox'
+        DetectRTC.browser.version
+        DetectRTC.browser.isChrome
+        DetectRTC.browser.isFirefox
+        DetectRTC.browser.isOpera
+        DetectRTC.browser.isIE
+        DetectRTC.browser.isSafari
+        DetectRTC.browser.isEdge
+
+        DetectRTC.browser.isPrivateBrowsing // incognito or private modes
+
+        DetectRTC.isCanvasSupportsStreamCapturing
+        DetectRTC.isVideoSupportsStreamCapturing
+    });
+</script>
