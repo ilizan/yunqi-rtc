@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>主页</title>
+    <script src="https://cdn.bootcss.com/socket.io/2.0.4/socket.io.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <style>
+        body * {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login">
+        <input type="text" id="name">
+        <button type="button" id="submitbtn">登录</button>
+    </div>
+    <div id="user" style="width: 300px; float: left;display:none">
+        <h3>昵称:
+            <span id="username"></span>
+        </h3>
+        当前总人数:
+        <span id="usersize"></span>
+        <ul id="userList"></ul>
+        <input type="text" id="y_user">
+        <button type="button" id="call">呼叫</button>
+    </div>
+    <div id="video">
+        <video id="localVideo" autoplay></video>
+        <video id="remoteVideo" autoplay></video>
+
+    </div>
+</body>
+
+</html>
+<script>
+    var socket = io.connect("https://172.18.5.78:4011");
+    $(function () {
+
+
+        $("#submitbtn").click(function () {
+            if ($("#name").val() != "") {
+                var data = {
+                    event: 'join', name: $("#name").val()
+                }
+                socket.emit('message', JSON.stringify(data));
+                $("#login").hide();
+                $("#user").show();
+                $("#username").html($("#name").val())
+                // $("#video")
+                videoInit();
+            }
+        });
+        socket.on('message', function (data) {//从服务器得到消息
+            console.log(data);
+            if (data.event == 'show') {
+                var html = "";
+                $("#usersize").html(Object.keys(data.allUsers).length);
+                $.each(data.allUsers, function (key, val) {
+                    html += "<li>" + key + "</li>";
+                })
+                $("#userList").html(html);
+            } else if (data.event == "call") {
+                if (confirm(data.name + "要与您视频，您同意吗？")) {
+                    var data = {
+                        event: "accept",
+                        accept: true,
+                        connectedUser: data.name
+                    }
+                    socket.emit('message', JSON.stringify(data));
+                }
+            } else if (data.event == "accept") {
+                if (data.accept) {
+                    // create an offer
+                    peerConn.createOffer(
+                        offer => {
+                            var data = {
+                                event: "offer",
+                                offer: offer,
+                                connectedUser: connectedUser
+                            };
+                            socket.emit('message', JSON.stringify(data));
+                            peerConn.setLocalDescription(offer);
+                        },
+                        error => {
+                            alert("Error when creating an offer");
+                        }
+                    );
+                } else {
+                    alert("对方已拒绝");
+                }
+            } else if (data.event == "offer") {
+                connectedUser = data.name;
+                createConnection();
+                peerConn.setRemoteDescription(new RTCSessionDescription(data.offer));
+                //create an answer to an offer
+                peerConn.createAnswer(
+                    answer => {
+                        peerConn.setLocalDescription(answer);
+                        var data = {
+                            event: "answer",
+                            answer: answer,
+                            connectedUser: connectedUser
+                        };
+                        socket.emit("message",JSON.stringify(data));
+                    },
+                    error => {
+                        alert("Error when creating an answer");
+                    }
+                );
+            }
+        });
+
+        $("#call").click(function () {
+            connectedUser = $("#y_user").val();
+            createConnection();
+            var data = {
+                event: "call",
+                connectedUser: connectedUser
+            };
+            socket.emit('message', JSON.stringify(data));
+        });
+    });
+    var stream;
+    var peerConn;
+    var connectedUser = null;
+    var configuration = {
+        iceServers: [
+            {
+                url: "turn:115.28.170.217:3478",
+                credential: "zmecust",
+                username: "zmecust"
+            }
+        ]
+    };
+    var videoInit = function () {
+        navigator.getUserMedia({ video: true, audio: true }, gotStream, logError);
+        function gotStream(e) {
+            //displaying local video stream on the page
+            document.querySelector('video#localVideo').src = window.URL.createObjectURL(e);
+            stream = e;
+        }
+        function logError(error) {
+            console.log(error);
+        }
+    }
+    var createConnection = function () {
+        peerConn = new RTCPeerConnection(configuration);
+        peerConn.addStream(stream);
+        peerConn.onaddstream = e => {
+            // this.remote_video = window.URL.createObjectURL(e.stream);
+            document.querySelector('video#remoteVideo').src = window.URL.createObjectURL(e.stream);
+        };
+        peerConn.onicecandidate = function (event) {
+            setTimeout(() => {
+                if (event.candidate) {
+                    console.log(event.candidate)
+                    var data = {
+                        event: "candidate",
+                        candidate: event.candidate,
+                        connectedUser: connectedUser
+                    };
+                    socket.emit('message', JSON.stringify(data));
+                }
+            });
+        };
+    }
+</script>
